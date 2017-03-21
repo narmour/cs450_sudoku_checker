@@ -28,19 +28,14 @@ void printSudoku(int (*s)[9]){
     }
 }
 
-int main(void){
+int main(int argc, char **argv){
     // read and store the input in a 2D array
-    FILE *input = fopen("input.txt","r");
-    if(!input){
-        puts("error opening input.txt");
-        exit(1);
-    }
     int sudoku[9][9];
     for(int i =0;i<9;i++)
         for(int j=0;j<9;j++)
-            fscanf(input,"%i ",&sudoku[i][j]);
+            fscanf(stdin,"%i ",&sudoku[i][j]);
 
-    //printSudoku(sudoku);
+    printSudoku(sudoku);
 
     // for each row create a thread to determine if it contains digits 1 through 9
     pthread_t *rowThreads = malloc(9 * sizeof(pthread_t));
@@ -131,7 +126,6 @@ void *checkRow(void *arg){
         int c = t->sudoku[row][i];
         for(int j =0;j<9;j++){
             if(i!=j && t->sudoku[row][j] == c){
-                //printf("found error in row: %i\n",t->task);
                 t->issue = 1;
             }
         }
