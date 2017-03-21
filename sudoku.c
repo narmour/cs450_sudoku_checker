@@ -14,7 +14,6 @@ struct threadInfo{
     int (*sudoku)[9];
 };
 
-
 void printSudoku(int (*s)[9]){
     for(int i =0; i < 9;i++){
         for(int j =0;j<9;j++){
@@ -25,15 +24,9 @@ void printSudoku(int (*s)[9]){
                 printf("   ");
         }
         if((i+1) % 3 ==0)
-            printf("\n\n");
+            printf("\n");
     }
-
-
-
-
-
 }
-
 
 int main(void){
     // read and store the input in a 2D array
@@ -47,49 +40,84 @@ int main(void){
         for(int j=0;j<9;j++)
             fscanf(input,"%i ",&sudoku[i][j]);
 
-    printSudoku(sudoku);
+    //printSudoku(sudoku);
 
     // for each row create a thread to determine if it contains digits 1 through 9
     pthread_t *rowThreads = malloc(9 * sizeof(pthread_t));
-    for(int i =0;i<9;++i){
+    struct threadInfo **rowStructs = malloc(9 * sizeof(struct threadInfo*));
+    for(int i =0;i<9;i++){
         //printf("ival: %i\n",i);
         struct threadInfo *t = malloc(sizeof(struct threadInfo));
         t->task = i;
         t->issue =0;
         t->sudoku = sudoku;
+        rowStructs[i] = t;
         pthread_create(&rowThreads[i],NULL,checkRow,(void*)t);
 
     }
 
     // for each col create a thread to determine if it contains digits 1 through 9
     pthread_t *colThreads = malloc(9 * sizeof(pthread_t));
+    struct threadInfo **colStructs = malloc(9 * sizeof(struct threadInfo*));
     for(int i =0;i<9;i++){
         struct threadInfo *t = malloc(sizeof(struct threadInfo));
         t->task = i;
         t->issue =0;
         t->sudoku = sudoku;
+        colStructs[i] = t;
         pthread_create(&colThreads[i],NULL,checkCol,(void*)t);
     }
 
     // for each 3x3 box create a thread to determine if it contains digits 1 through 9
     pthread_t *boxThreads = malloc(9 * sizeof(pthread_t));
+    struct threadInfo **boxStructs = malloc(9 * sizeof(struct threadInfo*));
     for(int i =0;i<9;i++){
         struct threadInfo *t = malloc(sizeof(struct threadInfo));
         t->task = i;
         t->issue =0;
         t->sudoku = sudoku;
+        boxStructs[i] = t;
         pthread_create(&boxThreads[i],NULL,checkBox,(void*)t);
     }
 
+    // wait for all threads to complete
     for(int i =0;i<9;i++){
         pthread_join(rowThreads[i],NULL);
-
+        pthread_join(colThreads[i],NULL);
+        pthread_join(boxThreads[i],NULL);
     }
 
+    // check if any threads found errors
+    int errors = 0;// 0 if no errors, set to 1 if i find an error
+    for(int i =0;i <9;i++){
+        if(rowStructs[i]->issue == 1){
+            printf("Row %i doesn't have the required values.\n",rowStructs[i]->task);
+            errors=1;
+        }
+        if(colStructs[i]->issue == 1){
+            printf("Column %i doesn't have the required values.\n",colStructs[i]->task);
+            errors=1;
+        }
+        if(boxStructs[i]->issue == 1){
+            printf("Subgrid %i doesn't have the required values.\n",boxStructs[i]->task);
+            errors=1;
+        }
 
+        // free memory
+        free(rowStructs[i]);
+        free(colStructs[i]);
+        free(boxStructs[i]);
+    }
 
+    // free some more stuff
+    free(rowStructs);
+    free(colStructs);
+    free(boxStructs);
 
-
+    if(!errors)
+        puts("The input is a valid Sudoku.");
+    else
+        puts("The input is not a valid Sudoku.");
 
     return 0;
 }
@@ -99,19 +127,17 @@ void *checkRow(void *arg){
 
     
     int row = t->task;
-    printf("task %i\n",row);
     for(int i =0;i<9;i++){
         int c = t->sudoku[row][i];
         for(int j =0;j<9;j++){
             if(i!=j && t->sudoku[row][j] == c){
-                printf("found error in row: %i\n",t->task);
+                //printf("found error in row: %i\n",t->task);
                 t->issue = 1;
             }
         }
     }
-
-
 }
+
 void *checkCol(void *arg){
     struct threadInfo *t = (struct threadInfo*)arg;
     int col = t->task;
@@ -119,7 +145,6 @@ void *checkCol(void *arg){
         int c = t->sudoku[i][col];
         for(int j =0;j<9;j++){
             if(i!=j && t->sudoku[j][col] == c){
-                printf("found error in col: %i\n",t->task);
                 t->issue = 1;
             }
         }
@@ -128,9 +153,19 @@ void *checkCol(void *arg){
 }
 void *checkBox(void *arg){
     struct threadInfo *t = (struct threadInfo*)arg;
-    int boxRow =(t->task/3)*3;  
-    int boxCol =(t->task);
-    printf("task: %i     div: %i\n",t->task,t->task/3);
+    int boxRowStart =(t->task/3)*3;  
+    int boxColStart =(t->task % 3) * 3;
 
-
+    for(int i=boxRowStart;i<boxRowStart+3;i++){ 
+        for(int j = boxColStart;j<boxColStart+3;j++){
+            int c = t->sudoku[i][j];
+            for(int k=boxRowStart;k<boxRowStart+3;k++){
+                for(int l = boxColStart;l<boxColStart+3;l++){
+                    if(k!=i && l!=j && c == t->sudoku[k][l]){
+                        t->issue = 1;
+                    }
+                }
+            }
+        }
+    }
 }
