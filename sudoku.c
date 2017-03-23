@@ -29,6 +29,11 @@ void printSudoku(int (*s)[9]){
 }
 
 int main(int argc, char **argv){
+
+
+    const char *boxNames[9] = {"top left","top middle","top right","middle left",
+        "middle middle","middle right","bottom left","bottom middle","bottom right"};
+
     // read and store the input in a 2D array
     int sudoku[9][9];
     for(int i =0;i<9;i++)
@@ -94,7 +99,7 @@ int main(int argc, char **argv){
             errors=1;
         }
         if(boxStructs[i]->issue == 1){
-            printf("Subgrid %i doesn't have the required values.\n",boxStructs[i]->task);
+            printf("The %s Subgrid  doesn't have the required values.\n",boxNames[boxStructs[i]->task]);
             errors=1;
         }
 
