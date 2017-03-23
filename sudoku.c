@@ -31,8 +31,6 @@ void printSudoku(int (*s)[9]){
 int main(int argc, char **argv){
 
 
-    const char *boxNames[9] = {"top left","top middle","top right","middle left",
-        "middle middle","middle right","bottom left","bottom middle","bottom right"};
 
     // read and store the input in a 2D array
     int sudoku[9][9];
@@ -87,6 +85,9 @@ int main(int argc, char **argv){
         pthread_join(boxThreads[i],NULL);
     }
 
+    const char *boxNames[9] = {"top left","top middle","top right","middle left",
+        "middle middle","middle right","bottom left","bottom middle","bottom right"};
+
     // check if any threads found errors
     int errors = 0;// 0 if no errors, set to 1 if i find an error
     for(int i =0;i <9;i++){
@@ -124,8 +125,6 @@ int main(int argc, char **argv){
 
 void *checkRow(void *arg){
     struct threadInfo *t = (struct threadInfo*)arg;
-
-    
     int row = t->task;
     for(int i =0;i<9;i++){
         int c = t->sudoku[row][i];
